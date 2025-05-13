@@ -60,4 +60,13 @@ export class UsersService {
     if (error) throw error;
     return data;
   }
+
+  async getAllUsers(): Promise<User[]> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*');
+
+    if (error) throw error;
+    return data;
+  }
 } 

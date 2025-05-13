@@ -28,4 +28,9 @@ export class UsersController {
   ): Promise<User> {
     return this.usersService.updateCompany(id, company_id);
   }
+
+  @Get()
+  async getAllUsers(): Promise<User[]> {
+    return this.usersService.getAllUsers();
+  }
 }

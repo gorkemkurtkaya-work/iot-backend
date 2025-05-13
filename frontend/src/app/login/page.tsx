@@ -29,6 +29,11 @@ export default function LoginPage() {
       });
       
       if (response.data.access_token) {
+        // Kullanıcı bilgilerini localStorage'a kaydet
+        if (response.data.user) {
+          localStorage.setItem('user_info', JSON.stringify(response.data.user));
+        }
+        
         router.push('/dashboard');
       }
     } catch (err) {

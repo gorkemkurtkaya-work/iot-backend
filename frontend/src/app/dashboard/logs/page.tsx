@@ -31,6 +31,21 @@ interface User {
   role: string;
 }
 
+// İşlem tiplerini Türkçe'ye çeviren yardımcı fonksiyon
+const translateAction = (action: string): string => {
+  const actionMap: { [key: string]: string } = {
+    'viewed_sensor_data': 'Sensör Verilerini Görüntüledi',
+    'viewed_user_logs': 'Kullanıcı Loglarını Görüntüledi',
+    'created_user': 'Kullanıcı Oluşturdu',
+    'updated_user': 'Kullanıcı Güncelledi',
+    'deleted_user': 'Kullanıcı Sildi',
+    'logged_in': 'Giriş Yaptı',
+    'logged_out': 'Çıkış Yaptı'
+  };
+  
+  return actionMap[action] || action;
+};
+
 export default function LogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -179,7 +194,7 @@ export default function LogsPage() {
             <div className="space-y-4">
               {actionCounts.map(([action, count]) => (
                 <div key={action} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                  <span className="font-medium">{action}</span>
+                  <span className="font-medium">{translateAction(action)}</span>
                   <span className="text-sm text-gray-600">{count} kez</span>
                 </div>
               ))}
@@ -236,7 +251,7 @@ export default function LogsPage() {
                     <TableRow key={log.id}>
                       <TableCell>{new Date(log.timestamp).toLocaleString('tr-TR')}</TableCell>
                       <TableCell>{log.username}</TableCell>
-                      <TableCell>{log.action}</TableCell>
+                      <TableCell>{translateAction(log.action)}</TableCell>
                     </TableRow>
                   ))
                 )}

@@ -560,9 +560,6 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-600">
             <span className="font-medium text-gray-800">Rol:</span> {getUserRoleName(user.role)}
           </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-medium text-gray-800">Cihaz Sayısı:</span> {userDevices.length}
-          </p>
           
           {userDevices.length > 0 && (
             <div className="mt-4">
@@ -590,9 +587,6 @@ export default function DashboardPage() {
           {device.name}
         </h3>
         <div className="space-y-3">
-          <p className="text-sm text-gray-600">
-            <span className="font-medium text-gray-800">Tip:</span> {device.type}
-          </p>
           <p className="text-sm text-gray-600">
             <span className="font-medium text-gray-800">Kullanıcı:</span> {deviceUser?.name || 'Belirtilmemiş'}
           </p>

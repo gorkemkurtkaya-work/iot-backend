@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as mqtt from 'mqtt';
 import { SensorDataService } from '../sensor-data/sensor-data.service';
+import { logger } from '../config/logger';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
@@ -13,24 +14,28 @@ export class MqttService implements OnModuleInit {
   }
 
   private connectAndSubscribe() {
-    this.client = mqtt.connect('mqtt://localhost:1883'); // veya ortam değişkeni
+    this.client = mqtt.connect('mqtt://localhost:1883');
 
     this.client.on('connect', () => {
-      console.log('✅ MQTT bağlantısı kuruldu');
+      logger.info('MQTT bağlantısı kuruldu');
       this.client.subscribe('factory/temperature/#', (err) => {
-        if (err) console.error('📛 MQTT subscribe hatası:', err);
-        else console.log('📡 MQTT topic’e abone olundu');
+        if (err) {
+          logger.error('MQTT subscribe hatası', { error: err.message });
+        } else {
+          logger.info('MQTT topic\'e abone olundu', { topic: 'factory/temperature/#' });
+        }
       });
     });
 
     this.client.on('message', async (topic, message) => {
       try {
         const payload = JSON.parse(message.toString());
+        logger.debug('MQTT mesajı alındı', { topic, payload });
 
         // Basit doğrulama
         const { sensor_id, temperature, humidity, timestamp } = payload;
         if (!sensor_id || !temperature || !humidity || !timestamp) {
-          console.warn('📛 Eksik veri:', payload);
+          logger.warn('Eksik veri alındı', { payload });
           return;
         }
 
@@ -39,13 +44,34 @@ export class MqttService implements OnModuleInit {
           sensor_id,
           temperature,
           humidity,
-          timestamp, // ISO string olmalı
+          timestamp,
         });
 
-        console.log('✅ Veri kaydedildi:', payload);
+        logger.info('Sensör verisi kaydedildi', { 
+          sensor_id, 
+          temperature, 
+          humidity, 
+          timestamp 
+        });
       } catch (err) {
-        console.error('📛 MQTT mesaj işleme hatası:', err.message);
+        logger.error('MQTT mesaj işleme hatası', { 
+          error: err.message,
+          topic,
+          message: message.toString()
+        });
       }
+    });
+
+    this.client.on('error', (err) => {
+      logger.error('MQTT bağlantı hatası', { error: err.message });
+    });
+
+    this.client.on('close', () => {
+      logger.warn('MQTT bağlantısı kapandı');
+    });
+
+    this.client.on('reconnect', () => {
+      logger.info('MQTT yeniden bağlanma denemesi');
     });
   }
 }

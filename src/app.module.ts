@@ -5,6 +5,7 @@ import { CompaniesModule } from './companies/companies.module';
 import { DevicesModule } from './devices/devices.module';
 import { SensorDataModule } from './sensor-data/sensor-data.module';
 import { MqttModule } from './mqtt/mqtt.module';
+import { DeviceAssignmentsModule } from './device_assignments/device-assignments.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { MqttModule } from './mqtt/mqtt.module';
     DevicesModule,
     SensorDataModule,
     MqttModule,
+    DeviceAssignmentsModule,
   ],
   controllers: [],
   providers: [],

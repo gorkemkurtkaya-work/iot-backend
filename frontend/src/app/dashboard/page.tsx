@@ -26,6 +26,7 @@ ChartJS.register(
 
 interface SensorData {
   id: number;
+  name: string;
   sensor_id: string;
   temperature: number;
   humidity: number;
@@ -56,6 +57,14 @@ interface Device {
   name: string;
   type: string;
   user_id: string;
+  sensor_id: string;
+  company_id: string;
+}
+
+interface DeviceAssignment {
+  id: string;
+  user_id: string;
+  device_id: string;
 }
 
 export default function DashboardPage() {
@@ -67,6 +76,17 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'sensor' | 'companies' | 'users' | 'devices' | 'roles'>('sensor');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [filteredData, setFilteredData] = useState<{
+    filteredSensorData: SensorData[];
+    filteredCompanies: Company[];
+    filteredUsers: User[];
+    filteredDevices: Device[];
+  }>({
+    filteredSensorData: [],
+    filteredCompanies: [],
+    filteredUsers: [],
+    filteredDevices: []
+  });
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -79,18 +99,146 @@ export default function DashboardPage() {
         });
         setCurrentUser(userResponse.data);
         
-        // Tüm gerekli verileri paralel olarak çek
-        const [sensorResponse, companiesResponse, usersResponse, devicesResponse] = await Promise.all([
-          axios.get('http://localhost:3000/sensor-data', { withCredentials: true }),
-          axios.get('http://localhost:3000/companies', { withCredentials: true }),
-          axios.get('http://localhost:3000/users', { withCredentials: true }),
-          axios.get('http://localhost:3000/devices', { withCredentials: true })
-        ]);
+        let sensorData = [];
+        let companiesData = [];
+        let usersData = [];
+        let devicesData = [];
+
+        // Kullanıcı rolüne göre veri çekme işlemlerini ayarla
+        if (userResponse.data.role === UserRole.USER) {
+          // Normal kullanıcı için sadece kendi verilerini çek
+          try {
+            // Kullanıcının atanmış cihazlarını al
+            const assignmentsResponse = await axios.get(
+              `http://localhost:3000/device-assignments/user/${userResponse.data.id}`,
+              { withCredentials: true }
+            );
+            
+            const assignedDeviceIds = assignmentsResponse.data.map(
+              (assignment: DeviceAssignment) => assignment.device_id
+            );
+
+            if (assignedDeviceIds.length > 0) {
+              // Önce cihazları çek
+              const devicesResponse = await axios.get('http://localhost:3000/devices', { 
+                withCredentials: true
+              });
+              
+              // Atanmış cihazları filtrele
+              devicesData = devicesResponse.data.filter((device: Device) => 
+                assignedDeviceIds.includes(device.id)
+              );
+
+              // Her bir cihaz için sensör verilerini çek
+              const sensorPromises = devicesData.map(async (device: Device) => {
+                try {
+                  const response = await axios.get(
+                    `http://localhost:3000/sensor-data/${device.sensor_id}`,
+                    { withCredentials: true }
+                  );
+                  return response.data;
+                } catch (error) {
+                  console.error(`${device.sensor_id} için sensör verisi alınamadı:`, error);
+                  return [];
+                }
+              });
+
+              // Tüm sensör verilerini birleştir
+              const sensorResults = await Promise.all(sensorPromises);
+              sensorData = sensorResults.flat();
+            }
+            
+            // Kullanıcının kendi şirket bilgisini al
+            const companyResponse = await axios.get(
+              `http://localhost:3000/companies/${userResponse.data.company_id}`,
+              { withCredentials: true }
+            );
+            companiesData = [companyResponse.data];
+            
+            // Kullanıcının kendi bilgilerini al
+            usersData = [userResponse.data];
+          } catch (error) {
+            console.error('Kullanıcı verileri alınırken hata:', error);
+          }
+        } else if (userResponse.data.role === UserRole.COMPANY_ADMIN) {
+          // Company Admin için şirket verilerini çek
+          try {
+            // Önce cihazları çek
+            const devicesResponse = await axios.get('http://localhost:3000/devices', { 
+              withCredentials: true
+            });
+            
+            // Şirkete ait cihazları filtrele
+            devicesData = devicesResponse.data.filter((device: Device) => 
+              device.company_id === userResponse.data.company_id
+            );
+
+            if (devicesData.length > 0) {
+              // Her bir cihaz için sensör verilerini çek
+              const sensorPromises = devicesData.map(async (device: Device) => {
+                try {
+                  const response = await axios.get(
+                    `http://localhost:3000/sensor-data/${device.sensor_id}`,
+                    { withCredentials: true }
+                  );
+                  return response.data;
+                } catch (error) {
+                  console.error(`${device.sensor_id} için sensör verisi alınamadı:`, error);
+                  return [];
+                }
+              });
+
+              // Tüm sensör verilerini birleştir
+              const sensorResults = await Promise.all(sensorPromises);
+              sensorData = sensorResults.flat();
+            }
+
+            // Şirket bilgilerini al
+            const companyResponse = await axios.get(
+              `http://localhost:3000/companies/${userResponse.data.company_id}`,
+              { withCredentials: true }
+            );
+            companiesData = [companyResponse.data];
+            
+            // Şirkete ait kullanıcıları al
+            const usersResponse = await axios.get('http://localhost:3000/users', { 
+              withCredentials: true 
+            });
+            usersData = usersResponse.data.filter((user: User) => 
+              user.company_id === userResponse.data.company_id
+            );
+          } catch (error) {
+            console.error('Şirket verileri alınırken hata:', error);
+          }
+        } else {
+          // System Admin için tüm verileri çek
+          const [sensorResponse, companiesResponse, usersResponse, devicesResponse] = await Promise.all([
+            axios.get('http://localhost:3000/sensor-data', { withCredentials: true }),
+            axios.get('http://localhost:3000/companies', { withCredentials: true }),
+            axios.get('http://localhost:3000/users', { withCredentials: true }),
+            axios.get('http://localhost:3000/devices', { withCredentials: true })
+          ]);
+          
+          sensorData = sensorResponse.data;
+          companiesData = companiesResponse.data;
+          usersData = usersResponse.data;
+          devicesData = devicesResponse.data;
+        }
         
-        setSensorData(sensorResponse.data);
-        setCompanies(companiesResponse.data);
-        setUsers(usersResponse.data);
-        setDevices(devicesResponse.data);
+        setSensorData(sensorData);
+        setCompanies(companiesData);
+        setUsers(usersData);
+        setDevices(devicesData);
+
+        // Filtrelenmiş verileri güncelle
+        const filtered = await getFilteredData(
+          userResponse.data,
+          sensorData,
+          companiesData,
+          usersData,
+          devicesData
+        );
+        setFilteredData(filtered);
       } catch (err) {
         setError('Veriler yüklenirken bir hata oluştu');
         console.error('Veri çekme hatası:', err);
@@ -105,19 +253,23 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Kullanıcı rolüne göre izin kontrolü yap
-  const hasPermission = (requiredRole: UserRole[]) => {
-    if (!currentUser) return false;
-    return requiredRole.includes(currentUser.role);
-  };
-
   // Kullanıcı bazlı filtreleme
-  const getFilteredData = () => {
-    if (!currentUser) return { filteredSensorData: [], filteredCompanies: [], filteredUsers: [], filteredDevices: [] };
+  const getFilteredData = async (
+    currentUser: User,
+    sensorData: SensorData[],
+    companies: Company[],
+    users: User[],
+    devices: Device[]
+  ) => {
+    if (!currentUser) return {
+      filteredSensorData: [],
+      filteredCompanies: [],
+      filteredUsers: [],
+      filteredDevices: []
+    };
     
     switch (currentUser.role) {
       case UserRole.SYSTEM_ADMIN:
-        // System Admin her şeyi görebilir
         return {
           filteredSensorData: sensorData,
           filteredCompanies: companies,
@@ -126,7 +278,6 @@ export default function DashboardPage() {
         };
       
       case UserRole.COMPANY_ADMIN:
-        // Company Admin sadece kendi şirketindeki verileri görebilir
         const companyDevices = devices.filter(device => {
           const deviceUsers = users.filter(u => u.id === device.user_id);
           return deviceUsers.some(u => u.company_id === currentUser.company_id);
@@ -149,19 +300,41 @@ export default function DashboardPage() {
         };
       
       case UserRole.USER:
-        // Normal kullanıcı sadece kendisine atanan cihazları görebilir
-        const userDevices = devices.filter(device => device.user_id === currentUser.id);
-        const userDeviceIds = userDevices.map(device => device.id);
-        const userSensorData = sensorData.filter(data => 
-          userDeviceIds.includes(data.sensor_id)
-        );
-        
-        return {
-          filteredSensorData: userSensorData,
-          filteredCompanies: companies.filter(company => company.id === currentUser.company_id),
-          filteredUsers: users.filter(u => u.id === currentUser.id),
-          filteredDevices: userDevices
-        };
+        try {
+          // Kullanıcının atanmış cihazlarını al
+          const userAssignmentsResponse = await axios.get(
+            `http://localhost:3000/device-assignments/user/${currentUser.id}`,
+            { withCredentials: true }
+          );
+          
+          const assignedDeviceIds = userAssignmentsResponse.data.map(
+            (assignment: DeviceAssignment) => assignment.device_id
+          );
+          
+          // Atanmış cihazları bul
+          const userDevices = devices.filter(device => assignedDeviceIds.includes(device.id));
+          
+          // Atanmış cihazların sensör ID'lerini al
+          const sensorIds = userDevices.map(device => device.sensor_id);
+          
+          // Sensör verilerini filtrele
+          const userSensorData = sensorData.filter(data => sensorIds.includes(data.sensor_id));
+          
+          return {
+            filteredSensorData: userSensorData,
+            filteredCompanies: companies.filter(company => company.id === currentUser.company_id),
+            filteredUsers: users.filter(u => u.id === currentUser.id),
+            filteredDevices: userDevices
+          };
+        } catch (error) {
+          console.error('Cihaz atamaları alınırken hata:', error);
+          return {
+            filteredSensorData: [],
+            filteredCompanies: [],
+            filteredUsers: [],
+            filteredDevices: []
+          };
+        }
       
       default:
         return {
@@ -173,7 +346,13 @@ export default function DashboardPage() {
     }
   };
 
-  const { filteredSensorData, filteredCompanies, filteredUsers, filteredDevices } = getFilteredData();
+  const { filteredSensorData, filteredCompanies, filteredUsers, filteredDevices } = filteredData;
+
+  // Kullanıcı rolüne göre izin kontrolü yap
+  const hasPermission = (requiredRole: UserRole[]) => {
+    if (!currentUser) return false;
+    return requiredRole.includes(currentUser.role);
+  };
 
   const chartData = {
     labels: filteredSensorData.map(data => new Date(data.timestamp).toLocaleTimeString()),
@@ -397,7 +576,7 @@ export default function DashboardPage() {
     }
 
     return (
-      <div className={`${roleInfo.color} border-l-4 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow`}>
+      <div key={role} className={`${roleInfo.color} border-l-4 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow`}>
         <h3 className="text-xl font-bold text-gray-800 border-b pb-2 mb-4">
           {roleInfo.title}
         </h3>

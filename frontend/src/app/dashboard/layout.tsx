@@ -157,7 +157,7 @@ export default function DashboardLayout({
             {/* Entegrasyonlar - Sadece System Admin için */}
             {userRoleEnum === UserRole.SYSTEM_ADMIN && (
               <li>
-                <a href="/dashboard/integrations" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-200">
+                <a href="/dashboard/Entegrasyonlar" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-200">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 enum UserRole {
   SYSTEM_ADMIN = 'system_admin',
@@ -17,7 +18,7 @@ interface Company {
 
 interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
   role: UserRole;
   company_id: string;
@@ -44,7 +45,7 @@ export default function CompaniesPage() {
   
   // Yeni kullanıcı için
   const [newUser, setNewUser] = useState({
-    username: '',
+    name: '',
     email: '',
     password: '',
     role: UserRole.USER,
@@ -104,9 +105,22 @@ export default function CompaniesPage() {
       
       setCompanies([...companies, response.data]);
       setNewCompanyName('');
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı!',
+        text: 'Şirket başarıyla eklendi.',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (err) {
       console.error('Şirket eklenirken hata:', err);
-      setError('Şirket oluşturulurken bir hata oluştu');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Şirket oluşturulurken bir hata oluştu.',
+        confirmButtonText: 'Tamam'
+      });
     } finally {
       setAddingCompany(false);
     }
@@ -127,7 +141,6 @@ export default function CompaniesPage() {
         { withCredentials: true }
       );
       
-      // Güncellenen şirketi state'de de güncelle
       const updatedCompanies = companies.map(company => 
         company.id === editCompanyId ? { ...company, name: editCompanyName } : company
       );
@@ -135,39 +148,88 @@ export default function CompaniesPage() {
       setCompanies(updatedCompanies);
       setEditCompanyId(null);
       setEditCompanyName('');
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı!',
+        text: 'Şirket başarıyla güncellendi.',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (err) {
       console.error('Şirket güncellenirken hata:', err);
-      setError('Şirket güncellenirken bir hata oluştu');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Şirket güncellenirken bir hata oluştu.',
+        confirmButtonText: 'Tamam'
+      });
     }
   };
   
   const handleDeleteCompany = async (id: string) => {
-    // Silme işleminden önce onay iste
-    if (!window.confirm('Bu şirketi silmek istediğinize emin misiniz?')) {
-      return;
-    }
-    
-    try {
-      await axios.delete(`http://localhost:3000/companies/${id}`, {
-        withCredentials: true
-      });
-      
-      // Silinen şirketi state'den kaldır
-      setCompanies(companies.filter(company => company.id !== id));
-    } catch (err) {
-      console.error('Şirket silinirken hata:', err);
-      setError('Şirket silinirken bir hata oluştu');
+    const result = await Swal.fire({
+      title: 'Emin misiniz?',
+      text: "Bu şirketi silmek istediğinize emin misiniz?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Evet, sil!',
+      cancelButtonText: 'İptal'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:3000/companies/${id}`, {
+          withCredentials: true
+        });
+        
+        setCompanies(companies.filter(company => company.id !== id));
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Başarılı!',
+          text: 'Şirket başarıyla silindi.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } catch (err) {
+        console.error('Şirket silinirken hata:', err);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Hata!',
+          text: 'Şirket silinirken bir hata oluştu.',
+          confirmButtonText: 'Tamam'
+        });
+      }
     }
   };
   
   const openAddUserModal = (companyId: string) => {
     setSelectedCompanyId(companyId);
-    setNewUser({...newUser, company_id: companyId});
+    setNewUser({
+      name: '',
+      email: '',
+      password: '',
+      role: UserRole.USER,
+      company_id: companyId
+    });
     setShowAddUserModal(true);
   };
   
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!newUser.company_id) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Şirket ID\'si gereklidir',
+        confirmButtonText: 'Tamam'
+      });
+      return;
+    }
     
     try {
       const response = await axios.post(
@@ -176,21 +238,32 @@ export default function CompaniesPage() {
         { withCredentials: true }
       );
       
-      // Yeni kullanıcıyı kullanıcılar listesine ekle
       setUsers([...users, response.data]);
       
-      // Modal'ı kapat ve form'u sıfırla
       setShowAddUserModal(false);
       setNewUser({
-        username: '',
+        name: '',
         email: '',
         password: '',
         role: UserRole.USER,
         company_id: ''
       });
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı!',
+        text: 'Kullanıcı başarıyla eklendi.',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (err) {
       console.error('Kullanıcı eklenirken hata:', err);
-      setError('Kullanıcı oluşturulurken bir hata oluştu');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Kullanıcı oluşturulurken bir hata oluştu.',
+        confirmButtonText: 'Tamam'
+      });
     }
   };
   
@@ -203,15 +276,27 @@ export default function CompaniesPage() {
         { withCredentials: true }
       );
       
-      // Güncellenen kullanıcıyı state'de de güncelle
       const updatedUsers = users.map(user => 
         user.id === userId ? { ...user, role: newRole } : user
       );
       
       setUsers(updatedUsers);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı!',
+        text: 'Kullanıcı rolü başarıyla güncellendi.',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (err) {
       console.error('Kullanıcı rolü güncellenirken hata:', err);
-      setError('Kullanıcı rolü güncellenirken bir hata oluştu');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Kullanıcı rolü güncellenirken bir hata oluştu.',
+        confirmButtonText: 'Tamam'
+      });
     }
   };
   
@@ -252,17 +337,17 @@ export default function CompaniesPage() {
           <form onSubmit={handleAddUser}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                   Kullanıcı Adı
                 </label>
                 <input
                   type="text"
-                  name="username"
-                  id="username"
+                  name="name"
+                  id="name"
                   required
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={newUser.username}
-                  onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
                 />
               </div>
               
@@ -479,7 +564,7 @@ export default function CompaniesPage() {
                             .map(user => (
                               <tr key={user.id}>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                                  <div className="text-sm font-medium text-gray-900">{user.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="text-sm text-gray-500">{user.email}</div>

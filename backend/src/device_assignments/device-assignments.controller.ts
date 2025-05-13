@@ -15,4 +15,9 @@ export class DeviceAssignmentsController {
   async findByUser(@Param('user_id') user_id: string) {
     return this.service.findByUserId(user_id);
   }
+
+  @Get('device/:device_id')
+  async findByDevice(@Param('device_id') device_id: string) {
+    return this.service.findByDeviceId(device_id);
+  }
 }

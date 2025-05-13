@@ -1,4 +1,5 @@
 const mqtt = require('mqtt');
+const moment = require('moment-timezone');
 
 // MQTT istemcisi oluştur
 const client = mqtt.connect('mqtt://localhost:1883');
@@ -6,13 +7,14 @@ const client = mqtt.connect('mqtt://localhost:1883');
 // Bağlantı olaylarını dinle
 client.on('connect', () => {
     console.log('MQTT Broker\'a bağlandı');
+    const localTime = moment().tz('Europe/Istanbul').format();
     
     // Test mesajı gönder - CreateSensorDataDto ile aynı yapıda olmalı
     const testMessage = {
-        sensor_id: 'humidity_beta_01',
-        temperature: 25.5,
-        humidity: 60,
-        timestamp: new Date().toISOString()
+        sensor_id: 'deneme_sensor_1',
+        temperature: 22,
+        humidity: 50,
+        timestamp: localTime,
     };
 
     // Mesajı yayınla - konu yolunun mqtt.service.ts'deki abonelikle eşleştiğinden emin ol

@@ -50,4 +50,17 @@ export class AuthService {
     const { password, ...result } = userDetails;
     return result;
   }
+
+  async logout(user: any) {
+    try {
+
+      
+      return {
+        success: true,
+        message: 'Başarıyla çıkış yapıldı'
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Çıkış yapılırken bir hata oluştu');
+    }
+  }
 } 

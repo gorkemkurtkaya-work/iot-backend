@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import {
   Chart as ChartJS,
@@ -13,6 +14,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import Swal from 'sweetalert2';
 
 ChartJS.register(
   CategoryScale,
@@ -96,6 +98,7 @@ export default function DashboardPage() {
     filteredUsers: [],
     filteredDevices: []
   });
+  const router = useRouter();
 
   // Action'ı Türkçe'ye çevir
   const getActionText = (action: string) => {
@@ -326,7 +329,12 @@ export default function DashboardPage() {
         );
         setFilteredData(filtered);
       } catch (err) {
-        setError('Veriler yüklenirken bir hata oluştu');
+        Swal.fire({
+          icon: 'error',
+          title: 'Hata',
+          text: 'Veri çekme işlemi sırasında bir hata oluştu.',
+          confirmButtonText: 'Tamam'
+        });
         console.error('Veri çekme hatası:', err);
       } finally {
         setLoading(false);
@@ -816,7 +824,7 @@ export default function DashboardPage() {
 
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Son Sensör Kayıtları</h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredSensorData.slice(0, 20).map((data) => (
+              {filteredSensorData.slice(0, 50).map((data) => (
                 <div key={data.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
                   <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">
                     Sensör: {data.sensor_id}

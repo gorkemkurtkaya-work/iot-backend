@@ -141,7 +141,7 @@ export default function CihazlarPage() {
   // Cihaz atama modalını render et
   const renderAssignDeviceModal = (device: Device) => {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
           <button 
             onClick={() => setShowAssignModal(false)}
@@ -186,6 +186,8 @@ export default function CihazlarPage() {
   // State'e yeni değişkenler ekle
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedDeviceForDetails, setSelectedDeviceForDetails] = useState<Device | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -486,7 +488,7 @@ export default function CihazlarPage() {
     if (!showAddModal) return null;
     
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
           <button 
             onClick={() => setShowAddModal(false)}
@@ -606,7 +608,7 @@ export default function CihazlarPage() {
     if (!editDeviceId) return null;
     
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
           <button 
             onClick={() => setEditDeviceId(null)}
@@ -699,6 +701,82 @@ export default function CihazlarPage() {
     );
   };
 
+  // Cihaz detayları modalını render et
+  const renderDeviceDetailsModal = (device: Device) => {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg w-full max-w-2xl p-6 relative">
+          <button 
+            onClick={() => setShowDetailsModal(false)}
+            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          
+          <h3 className="text-xl font-medium text-gray-900 mb-4">
+            Cihaz Detayları: {device.name}
+          </h3>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Cihaz Bilgileri</h4>
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm">
+                    <span className="font-medium">Cihaz Adı:</span> {device.name}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Sensör ID:</span> {device.sensor_id}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Şirket:</span> {device.company?.name || 'Atanmamış'}
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Atanan Kullanıcılar</h4>
+                <div className="mt-2">
+                  {device.assignments && device.assignments.length > 0 ? (
+                    <ul className="text-sm space-y-1">
+                      {device.assignments.map(assignment => (
+                        <li key={assignment.id} className="flex items-center">
+                          <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                          {assignment.user?.name || 'Bilinmeyen Kullanıcı'}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500">Henüz kullanıcı atanmamış</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
+              <h4 className="text-sm font-medium text-gray-500 mb-2">Cihaz Durumu</h4>
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                <span className="text-sm text-gray-600">Aktif</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={() => setShowDetailsModal(false)}
+              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200"
+            >
+              Kapat
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Kullanıcı ve şirket adını getir
   const getUserName = (deviceId: string) => {
     const device = devices.find(d => d.id === deviceId);
@@ -735,8 +813,8 @@ export default function CihazlarPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Cihazlar</h1>
           
-          {/* Sadece System Admin ve Company Admin cihaz ekleyebilir */}
-          {(currentUser?.role === UserRole.SYSTEM_ADMIN || currentUser?.role === UserRole.COMPANY_ADMIN) && (
+          {/* Sadece System Admin cihaz ekleyebilir */}
+          {currentUser?.role === UserRole.SYSTEM_ADMIN && (
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
@@ -816,10 +894,6 @@ export default function CihazlarPage() {
                                     >
                                       Sil
                                     </button>
-                                  </>
-                                )}
-                                {(currentUser?.role === UserRole.SYSTEM_ADMIN || 
-                                  (currentUser?.role === UserRole.COMPANY_ADMIN && device.company_id === currentUser.company_id)) && (
                                     <button
                                       onClick={() => {
                                         setSelectedDevice(device);
@@ -829,10 +903,14 @@ export default function CihazlarPage() {
                                     >
                                       Kullanıcı Ata
                                     </button>
-                                  )}
+                                  </>
+                                )}
                                 <button
                                   className="text-green-600 hover:text-green-900"
-                                  onClick={() => {}}
+                                  onClick={() => {
+                                    setSelectedDeviceForDetails(device);
+                                    setShowDetailsModal(true);
+                                  }}
                                 >
                                   Detaylar
                                 </button>
@@ -844,7 +922,7 @@ export default function CihazlarPage() {
                         <tr>
                           <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
                             Henüz cihaz bulunmamaktadır.
-                            {(currentUser?.role === UserRole.SYSTEM_ADMIN || currentUser?.role === UserRole.COMPANY_ADMIN) && (
+                            {currentUser?.role === UserRole.SYSTEM_ADMIN && (
                               <span> Yeni bir cihaz ekleyin.</span>
                             )}
                           </td>
@@ -863,6 +941,7 @@ export default function CihazlarPage() {
       {renderAddDeviceModal()}
       {renderEditDeviceModal()}
       {showAssignModal && selectedDevice && renderAssignDeviceModal(selectedDevice)}
+      {showDetailsModal && selectedDeviceForDetails && renderDeviceDetailsModal(selectedDeviceForDetails)}
     </div>
   );
 }

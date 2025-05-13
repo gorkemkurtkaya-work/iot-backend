@@ -36,4 +36,18 @@ export class AuthController {
   async getProfile(@Req() request: Request) {
     return this.authService.getProfile(request.user);
   }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    // Cookie'yi temizle
+    response.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+
+    return this.authService.logout(request.user);
+  }
 } 

@@ -40,7 +40,7 @@ interface Company {
 
 interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
   company_id: string;
   role: UserRole;
@@ -67,14 +67,23 @@ interface DeviceAssignment {
   device_id: string;
 }
 
+interface LogEntry {
+  id: string;
+  user_id: string;
+  action: string;
+  timestamp: string;
+  username: string;
+}
+
 export default function DashboardPage() {
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'sensor' | 'companies' | 'users' | 'devices' | 'roles'>('sensor');
+  const [activeTab, setActiveTab] = useState<'sensor' | 'companies' | 'users' | 'devices' | 'roles' | 'logs'>('sensor');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [filteredData, setFilteredData] = useState<{
     filteredSensorData: SensorData[];
@@ -88,6 +97,24 @@ export default function DashboardPage() {
     filteredDevices: []
   });
 
+  // Action'ı Türkçe'ye çevir
+  const getActionText = (action: string) => {
+    switch (action) {
+      case 'viewed_user_logs':
+        return 'Kullanıcı loglarını görüntüledi';
+      case 'viewed_sensor_data':
+        return 'Sensör verilerini görüntüledi';
+      case 'viewed_devices':
+        return 'Cihazları görüntüledi';
+      case 'viewed_users':
+        return 'Kullanıcıları görüntüledi';
+      case 'viewed_companies':
+        return 'Şirketleri görüntüledi';
+      default:
+        return action;
+    }
+  };
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -99,10 +126,11 @@ export default function DashboardPage() {
         });
         setCurrentUser(userResponse.data);
         
-        let sensorData = [];
-        let companiesData = [];
-        let usersData = [];
-        let devicesData = [];
+        let sensorData: SensorData[] = [];
+        let companiesData: Company[] = [];
+        let usersData: User[] = [];
+        let devicesData: Device[] = [];
+        let logsData: LogEntry[] = [];
 
         // Kullanıcı rolüne göre veri çekme işlemlerini ayarla
         if (userResponse.data.role === UserRole.USER) {
@@ -207,6 +235,37 @@ export default function DashboardPage() {
             usersData = usersResponse.data.filter((user: User) => 
               user.company_id === userResponse.data.company_id
             );
+
+            // Şirkete ait kullanıcıların log kayıtlarını al
+            const companyUserIds = usersData.map((user: User) => user.id);
+            
+            // Her bir kullanıcı için log kayıtlarını çek
+            const logPromises = companyUserIds.map(async (userId: string) => {
+              try {
+                const response = await axios.get(
+                  `http://localhost:3000/user-logs/user/${userId}`,
+                  { withCredentials: true }
+                );
+                return response.data;
+              } catch (error) {
+                console.error(`${userId} için log kayıtları alınamadı:`, error);
+                return [];
+              }
+            });
+
+            // Tüm log kayıtlarını birleştir
+            const logResults = await Promise.all(logPromises);
+            logsData = logResults.flat();
+
+            // Log kayıtlarını kullanıcı bilgileriyle eşleştir
+            logsData = logsData.map(log => {
+              const user = usersData.find(u => u.id === log.user_id);
+              return {
+                ...log,
+                username: user?.name || 'Bilinmeyen Kullanıcı'
+              };
+            });
+
           } catch (error) {
             console.error('Şirket verileri alınırken hata:', error);
           }
@@ -223,12 +282,39 @@ export default function DashboardPage() {
           companiesData = companiesResponse.data;
           usersData = usersResponse.data;
           devicesData = devicesResponse.data;
+
+          // System Admin için tüm kullanıcıların loglarını çek
+          const logPromises = usersData.map(async (user: User) => {
+            try {
+              const response = await axios.get(
+                `http://localhost:3000/user-logs/user/${user.id}`,
+                { withCredentials: true }
+              );
+              return response.data;
+            } catch (error) {
+              console.error(`${user.id} için log kayıtları alınamadı:`, error);
+              return [];
+            }
+          });
+
+          const logResults = await Promise.all(logPromises);
+          logsData = logResults.flat();
+
+          // Log kayıtlarını kullanıcı bilgileriyle eşleştir
+          logsData = logsData.map(log => {
+            const user = usersData.find(u => u.id === log.user_id);
+            return {
+              ...log,
+              username: user?.name || 'Bilinmeyen Kullanıcı'
+            };
+          });
         }
         
         setSensorData(sensorData);
         setCompanies(companiesData);
         setUsers(usersData);
         setDevices(devicesData);
+        setLogs(logsData);
 
         // Filtrelenmiş verileri güncelle
         const filtered = await getFilteredData(
@@ -261,88 +347,88 @@ export default function DashboardPage() {
     users: User[],
     devices: Device[]
   ) => {
-    if (!currentUser) return {
-      filteredSensorData: [],
-      filteredCompanies: [],
-      filteredUsers: [],
-      filteredDevices: []
-    };
-    
-    switch (currentUser.role) {
-      case UserRole.SYSTEM_ADMIN:
-        return {
-          filteredSensorData: sensorData,
-          filteredCompanies: companies,
-          filteredUsers: users,
-          filteredDevices: devices
-        };
-      
-      case UserRole.COMPANY_ADMIN:
-        const companyDevices = devices.filter(device => {
-          const deviceUsers = users.filter(u => u.id === device.user_id);
-          return deviceUsers.some(u => u.company_id === currentUser.company_id);
-        });
-        
-        const companyUsers = users.filter(user => 
-          user.company_id === currentUser.company_id && user.role !== UserRole.SYSTEM_ADMIN
+    try {
+      let filteredSensorData = sensorData;
+      let filteredCompanies = companies;
+      let filteredUsers = users;
+      let filteredDevices = devices;
+
+      if (currentUser.role === UserRole.USER) {
+        // Normal kullanıcı için atanmış cihazların verilerini filtrele
+        const assignmentsResponse = await axios.get(
+          `http://localhost:3000/device-assignments/user/${currentUser.id}`,
+          { withCredentials: true }
         );
         
-        const deviceIds = companyDevices.map(device => device.id);
-        const companySensorData = sensorData.filter(data => 
-          deviceIds.includes(data.sensor_id)
+        const assignedDeviceIds = assignmentsResponse.data.map(
+          (assignment: DeviceAssignment) => assignment.device_id
         );
-        
-        return {
-          filteredSensorData: companySensorData,
-          filteredCompanies: companies.filter(company => company.id === currentUser.company_id),
-          filteredUsers: companyUsers,
-          filteredDevices: companyDevices
-        };
-      
-      case UserRole.USER:
-        try {
-          // Kullanıcının atanmış cihazlarını al
-          const userAssignmentsResponse = await axios.get(
-            `http://localhost:3000/device-assignments/user/${currentUser.id}`,
-            { withCredentials: true }
-          );
-          
-          const assignedDeviceIds = userAssignmentsResponse.data.map(
-            (assignment: DeviceAssignment) => assignment.device_id
-          );
-          
-          // Atanmış cihazları bul
-          const userDevices = devices.filter(device => assignedDeviceIds.includes(device.id));
-          
-          // Atanmış cihazların sensör ID'lerini al
-          const sensorIds = userDevices.map(device => device.sensor_id);
-          
-          // Sensör verilerini filtrele
-          const userSensorData = sensorData.filter(data => sensorIds.includes(data.sensor_id));
-          
-          return {
-            filteredSensorData: userSensorData,
-            filteredCompanies: companies.filter(company => company.id === currentUser.company_id),
-            filteredUsers: users.filter(u => u.id === currentUser.id),
-            filteredDevices: userDevices
-          };
-        } catch (error) {
-          console.error('Cihaz atamaları alınırken hata:', error);
-          return {
-            filteredSensorData: [],
-            filteredCompanies: [],
-            filteredUsers: [],
-            filteredDevices: []
-          };
-        }
-      
-      default:
-        return {
-          filteredSensorData: [],
-          filteredCompanies: [],
-          filteredUsers: [],
-          filteredDevices: []
-        };
+
+        // Atanmış cihazları bul
+        const assignedDevices = devices.filter(device => 
+          assignedDeviceIds.includes(device.id)
+        );
+
+        // Atanmış cihazların sensör ID'lerini al
+        const assignedSensorIds = assignedDevices.map(device => device.sensor_id);
+
+        // Sadece atanmış cihazların sensör verilerini filtrele
+        filteredSensorData = sensorData.filter(data => 
+          assignedSensorIds.includes(data.sensor_id)
+        );
+
+        // Sadece kullanıcının kendi şirketini göster
+        filteredCompanies = companies.filter(company => 
+          company.id === currentUser.company_id
+        );
+
+        // Sadece kullanıcının kendisini göster
+        filteredUsers = users.filter(user => user.id === currentUser.id);
+
+        // Sadece atanmış cihazları göster
+        filteredDevices = assignedDevices;
+      } else if (currentUser.role === UserRole.COMPANY_ADMIN) {
+        // Company Admin için şirkete ait cihazların verilerini filtrele
+        const companyDevices = devices.filter(device => 
+          device.company_id === currentUser.company_id
+        );
+
+        // Şirkete ait cihazların sensör ID'lerini al
+        const companySensorIds = companyDevices.map(device => device.sensor_id);
+
+        // Sadece şirkete ait cihazların sensör verilerini filtrele
+        filteredSensorData = sensorData.filter(data => 
+          companySensorIds.includes(data.sensor_id)
+        );
+
+        // Sadece kendi şirketini göster
+        filteredCompanies = companies.filter(company => 
+          company.id === currentUser.company_id
+        );
+
+        // Sadece şirkete ait kullanıcıları göster
+        filteredUsers = users.filter(user => 
+          user.company_id === currentUser.company_id
+        );
+
+        // Sadece şirkete ait cihazları göster
+        filteredDevices = companyDevices;
+      }
+
+      return {
+        filteredSensorData,
+        filteredCompanies,
+        filteredUsers,
+        filteredDevices
+      };
+    } catch (error) {
+      console.error('Veri filtreleme hatası:', error);
+      return {
+        filteredSensorData: [],
+        filteredCompanies: [],
+        filteredUsers: [],
+        filteredDevices: []
+      };
     }
   };
 
@@ -443,7 +529,7 @@ export default function DashboardPage() {
               <div className="pl-2 border-l-2 border-blue-300">
                 {companyUsers.map(user => (
                   <p key={user.id} className="text-sm">
-                    {user.username} ({user.email}) - {getUserRoleName(user.role)}
+                    {user.name} ({user.email}) - {getUserRoleName(user.role)}
                   </p>
                 ))}
               </div>
@@ -462,7 +548,7 @@ export default function DashboardPage() {
     return (
       <div key={user.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
         <h3 className="text-xl font-bold text-gray-800 border-b pb-2 mb-4">
-          {user.username}
+          {user.name}
         </h3>
         <div className="space-y-3">
           <p className="text-sm text-gray-600">
@@ -508,7 +594,7 @@ export default function DashboardPage() {
             <span className="font-medium text-gray-800">Tip:</span> {device.type}
           </p>
           <p className="text-sm text-gray-600">
-            <span className="font-medium text-gray-800">Kullanıcı:</span> {deviceUser?.username || 'Belirtilmemiş'}
+            <span className="font-medium text-gray-800">Kullanıcı:</span> {deviceUser?.name || 'Belirtilmemiş'}
           </p>
           
           {relatedSensorData && (
@@ -608,13 +694,34 @@ export default function DashboardPage() {
             </svg>
           </div>
           <div className="ml-4">
-            <h2 className="text-lg font-semibold text-gray-800">{currentUser.username}</h2>
+            <h2 className="text-lg font-semibold text-gray-800">{currentUser.name}</h2>
             <div className="flex space-x-4">
               <p className="text-sm text-gray-600">{userCompany?.name || 'Genel'}</p>
               <span className="text-gray-400">•</span>
               <p className="text-sm text-gray-600">{getUserRoleName(currentUser.role)}</p>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Log kartını render et
+  const renderLogCard = (log: LogEntry) => {
+    const logUser = users.find(user => user.id === log.user_id);
+    
+    return (
+      <div key={log.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">
+              {logUser?.name || 'Bilinmeyen Kullanıcı'}
+            </h3>
+            <p className="text-sm text-gray-600">{getActionText(log.action)}</p>
+          </div>
+          <span className="text-xs text-gray-500">
+            {new Date(log.timestamp).toLocaleString()}
+          </span>
         </div>
       </div>
     );
@@ -690,6 +797,20 @@ export default function DashboardPage() {
           >
             Kullanıcı Rolleri
           </button>
+          
+          {/* Log sekmesi - Sadece SYSTEM_ADMIN ve COMPANY_ADMIN görebilir */}
+          {hasPermission([UserRole.SYSTEM_ADMIN, UserRole.COMPANY_ADMIN]) && (
+            <button
+              className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'logs' 
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+              onClick={() => setActiveTab('logs')}
+            >
+              Log Kayıtları
+            </button>
+          )}
         </div>
         
         {/* Sensör Verileri Sekmesi */}
@@ -759,6 +880,51 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Kullanıcı Rolleri</h2>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {Object.values(UserRole).map(role => renderRoleCard(role))}
+            </div>
+          </>
+        )}
+        
+        {/* Log Kayıtları Sekmesi */}
+        {activeTab === 'logs' && hasPermission([UserRole.SYSTEM_ADMIN, UserRole.COMPANY_ADMIN]) && (
+          <>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Log Kayıtları</h2>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Kullanıcı
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      İşlem
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Zaman
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {logs.map((log) => (
+                    <tr key={log.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {log.username}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">
+                          {getActionText(log.action)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </>
         )}

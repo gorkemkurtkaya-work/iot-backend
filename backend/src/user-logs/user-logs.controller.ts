@@ -11,7 +11,8 @@ export class UserLogsController {
   constructor(private readonly userLogsService: UserLogsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SYSTEM_ADMIN, UserRole.COMPANY_ADMIN)
   async create(@Body() createUserLogDto: CreateUserLogDto) {
     return this.userLogsService.create(createUserLogDto);
   }

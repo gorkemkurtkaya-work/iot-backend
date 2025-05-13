@@ -12,7 +12,6 @@ export class IntegrationsController {
 
   @Get()
   async findAll(@Request() req) {
-    // Kullanıcı rolüne göre entegrasyonları filtrele
     if (req.user.role === UserRole.SYSTEM_ADMIN) {
       return this.integrationsService.findAll();
     } else if (req.user.role === UserRole.COMPANY_ADMIN) {
@@ -25,8 +24,7 @@ export class IntegrationsController {
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req) {
     const integration = await this.integrationsService.findOne(id);
-    
-    // Yetki kontrolü
+  
     if (req.user.role === UserRole.SYSTEM_ADMIN) {
       return integration;
     } else if (req.user.role === UserRole.COMPANY_ADMIN && integration.company_id === req.user.company_id) {

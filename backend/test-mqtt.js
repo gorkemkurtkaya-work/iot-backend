@@ -1,7 +1,11 @@
 const mqtt = require('mqtt');
 const moment = require('moment-timezone');
 
-const client = mqtt.connect('mqtt://broker.emqx.io:1883');
+const client = mqtt.connect(process.env.MQTT_BROKER_URL, {
+  username: process.env.MQTT_USERNAME,
+  password: process.env.MQTT_PASSWORD,
+  reconnectPeriod: 1000, 
+});
 
 // Senin sensör ID’lerin
 const SENSOR_IDS = ['humidity_beta_01', 'humidity_beta_02', 'deneme_sensor_1'];

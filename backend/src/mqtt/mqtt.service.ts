@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { MqttClient, connect } from 'mqtt';
+import { MqttClient, connect, IClientOptions } from 'mqtt';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { SensorDataService } from '../sensor-data/sensor-data.service';
 import { logger } from '../config/logger';
@@ -7,9 +7,25 @@ import { logger } from '../config/logger';
 @Injectable()
 export class MqttService implements OnModuleInit {
   private client: MqttClient;
+  private brokerUrl: string;
+  private mqttOptions: IClientOptions;
 
   constructor(private readonly websocketGateway: WebsocketGateway, private readonly sensorDataService: SensorDataService) {
-    this.client = connect('mqtt://broker.emqx.io:1883');
+    this.brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://broker.emqx.io:1883';
+    
+    this.mqttOptions = {
+      username: process.env.MQTT_USERNAME || 'default',
+      password: process.env.MQTT_PASSWORD || 'default',
+      reconnectPeriod: 5000,
+    };
+
+    logger.debug('MQTT yapılandırması', { 
+      url: this.brokerUrl, 
+      username: this.mqttOptions.username,
+      hasPassword: !!this.mqttOptions.password 
+    });
+    
+    this.client = connect(this.brokerUrl, this.mqttOptions);
   }
 
   onModuleInit() {
@@ -18,7 +34,7 @@ export class MqttService implements OnModuleInit {
   }
 
   private connectAndSubscribe() {
-    logger.info('MQTT broker\'a bağlanılıyor: mqtt://broker.emqx.io:1883');
+    logger.info('MQTT broker\'a bağlanılıyor: ' + this.brokerUrl);
     this.client.on('connect', () => {
       logger.info('MQTT bağlantısı kuruldu');
       

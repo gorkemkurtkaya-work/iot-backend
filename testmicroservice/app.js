@@ -2,16 +2,24 @@ const mqtt = require('mqtt');
 const moment = require('moment-timezone');
 const express = require('express');
 const bodyParser = require('body-parser');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
-const port = 3500;
+const port = process.env.PORT || 3500;
 
 // Express ayarları
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const client = mqtt.connect('mqtt://broker.emqx.io:1883');
+const client = mqtt.connect(process.env.MQTT_BROKER_URL, {
+  username: process.env.MQTT_USERNAME,
+  password: process.env.MQTT_PASSWORD,
+  reconnectPeriod: 1000, // Bağlantı koparsa 1 saniyede tekrar dene
+  rejectUnauthorized: false,
+});
 
 // Senin sensör ID'lerin
 const SENSOR_IDS = ['humidity_beta_01', 'humidity_beta_02', 'deneme_sensor_1'];

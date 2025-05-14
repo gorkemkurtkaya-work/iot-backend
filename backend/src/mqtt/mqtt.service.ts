@@ -83,6 +83,12 @@ export class MqttService implements OnModuleInit {
         }
 
         // WebSocket üzerinden tüm bağlı istemcilere veriyi gönder
+        logger.info('WebSocket üzerinden sensör verisi gönderiliyor', { 
+          payload_type: typeof payload,
+          payload_content: payload,
+          event: 'sensorData' 
+        });
+        
         this.websocketGateway.sendToAll('sensorData', {
           type: 'new_sensor_data',
           data: payload

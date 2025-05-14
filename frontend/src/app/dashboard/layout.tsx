@@ -93,6 +93,8 @@ export default function DashboardLayout({
       await axios.post('http://localhost:3000/auth/logout', {}, {
         withCredentials: true
       });
+      // localStorage'daki kullanıcı bilgilerini temizle
+      localStorage.removeItem('user_info');
       // Başarılı çıkış sonrası yönlendirme yapabilirsiniz
       router.push('/login');
     } catch (error) {

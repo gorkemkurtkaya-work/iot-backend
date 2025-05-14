@@ -20,6 +20,7 @@ import {
   
     handleConnection(client: Socket) {
       console.log('🔌 Kullanıcı bağlandı:', client.id);
+      // Test mesajı gönder
       client.emit('test', { message: 'Test mesajı' });
     }
   
@@ -37,6 +38,7 @@ import {
   
     // Dışarıdan yayın göndermek istersen bu metodu kullan
     sendToAll(event: string, data: any) {
+      console.log(`📢 Tüm istemcilere '${event}' olayı gönderiliyor:`, data);
       this.server.emit(event, data);
     }
   }

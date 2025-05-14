@@ -15,7 +15,8 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import Swal from 'sweetalert2';
-import { io } from 'socket.io-client';
+import { Socket as ClientSocket } from 'socket.io-client';
+import io from 'socket.io-client';
 
 ChartJS.register(
   CategoryScale,
@@ -105,7 +106,7 @@ export default function DashboardPage() {
     filteredDevices: []
   });
   const router = useRouter();
-  const [socket, setSocket] = useState<typeof Socket | null>(null);
+  const [socket, setSocket] = useState<ClientSocket | null>(null);
 
   // Action'ı Türkçe'ye çevir
   const getActionText = (action: string) => {
@@ -349,47 +350,118 @@ export default function DashboardPage() {
     };
 
     fetchAllData();
-    // Her 30 saniyede bir verileri güncelle
     const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    // WebSocket bağlantısını kullanıcı oturumu kurulduktan sonra kur
+    if (!currentUser) return;
+
     // WebSocket bağlantısını kur
     const newSocket = io('http://localhost:3000', {
-      withCredentials: true
+      transports: ['websocket'],
+      // withCredentials özelliği ConnectOpts tipinde yok, bu yüzden kaldırıldı
     });
 
     newSocket.on('connect', () => {
-      console.log('WebSocket bağlantısı kuruldu');
+      console.log('🔌 WebSocket bağlantısı kuruldu');
+    });
+
+    // Test mesajını dinle
+    newSocket.on('test', (data: any) => {
+      console.log('📡 WebSocket test mesajı alındı:', data);
     });
 
     newSocket.on('sensorData', (data: SensorDataPayload) => {
+      console.log('📊 Yeni sensör verisi alındı');
+      
       if (data.type === 'new_sensor_data') {
-        // Yeni sensör verisi geldiğinde bildirim göster
-        Swal.fire({
-          title: 'Yeni Sensör Verisi!',
-          text: `Sıcaklık: ${data.data.temperature}°C, Nem: ${data.data.humidity}%`,
-          icon: 'info',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 5000,
-          timerProgressBar: true
-        });
+        // Kullanıcının rolüne göre sensör verisini filtrele
+        const shouldAddSensorData = isSensorDataAllowedForUser(currentUser, data.data, devices);
+        
+        if (shouldAddSensorData) {
+          // Yeni sensör verisi geldiğinde bildirim göster
+          Swal.fire({
+            title: 'Yeni Sensör Verisi!',
+            text: `Sıcaklık: ${data.data.temperature}°C, Nem: ${data.data.humidity}%`,
+            icon: 'info',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true
+          });
 
-        // Sensör verilerini güncelle
-        setSensorData(prevData => [data.data, ...prevData]);
+          console.log('📝 Sensör verileri güncelleniyor...');
+          // Sensör verilerini güncelle
+          setSensorData(prevData => {
+            console.log('👉 Önceki sensör verileri:', prevData.length);
+            const newData = [data.data, ...prevData];
+            console.log('👉 Yeni sensör verileri:', newData.length);
+            return newData;
+          });
+          
+          console.log('📝 Filtrelenmiş sensör verileri güncelleniyor...');
+          // Filtrelenmiş sensör verilerine de ekle
+          setFilteredData(prevState => {
+            console.log('👉 Önceki filtrelenmiş veriler:', prevState.filteredSensorData.length);
+            const newState = {
+              ...prevState,
+              filteredSensorData: [data.data, ...prevState.filteredSensorData]
+            };
+            console.log('👉 Yeni filtrelenmiş veriler:', newState.filteredSensorData.length);
+            return newState;
+          });
+          
+          console.log('✅ Tüm güncellemeler tamamlandı');
+        } else {
+          console.log('🚫 Bu sensör verisi kullanıcının izinleri dahilinde değil, gösterilmiyor');
+        }
       }
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('🔌 WebSocket bağlantısı koptu');
+    });
+
+    newSocket.on('error', (error: any) => {
+      console.error('❌ WebSocket hatası:', error);
     });
 
     setSocket(newSocket);
 
     // Component unmount olduğunda bağlantıyı kapat
     return () => {
+      console.log('🔌 WebSocket bağlantısı kapatılıyor...');
       newSocket.close();
     };
-  }, []);
+  }, [currentUser, devices]);
+
+  // Kullanıcının bu sensör verisini görmeye yetkisi var mı kontrol et
+  const isSensorDataAllowedForUser = (user: User | null, sensorData: SensorData, devices: Device[]): boolean => {
+    if (!user) return false;
+    
+    // System Admin her şeyi görebilir
+    if (user.role === UserRole.SYSTEM_ADMIN) {
+      return true;
+    }
+    
+    // Cihazı bulmaya çalış
+    const device = devices.find(d => d.sensor_id === sensorData.sensor_id);
+    if (!device) {
+      console.log('⚠️ Sensör ID ile ilişkili cihaz bulunamadı');
+      return false;
+    }
+    
+    // Company Admin sadece kendi şirketindeki cihazları görebilir
+    if (user.role === UserRole.COMPANY_ADMIN) {
+      return device.company_id === user.company_id;
+    }
+    
+    // Normal kullanıcı sadece kendisine atanmış cihazları görebilir
+    return device.user_id === user.id;
+  };
 
   // Kullanıcı bazlı filtreleme
   const getFilteredData = async (

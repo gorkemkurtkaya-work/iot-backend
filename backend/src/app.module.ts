@@ -10,6 +10,7 @@ import { DeviceAssignmentsModule } from './device_assignments/device-assignments
 import { UserLogsModule } from './user-logs/user-logs.module';
 import { UserLogsInterceptor } from './user-logs/user-logs.interceptor';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
     DeviceAssignmentsModule,
     UserLogsModule,
     IntegrationsModule,
+    WebsocketModule,
   ],
   controllers: [],
   providers: [

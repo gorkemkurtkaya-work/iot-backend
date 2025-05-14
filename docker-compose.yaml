@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3000
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:PW00L2VMyljP1y7a@db.hjbqpafgpmbxxzsewiql.supabase.co:5432/
+      - SUPABASE_URL=https://lulluozpnqprsuuwvjvw.supabase.co
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1bGx1b3pwbnFwcnN1dXd2anZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwNTg5NjksImV4cCI6MjA2MjYzNDk2OX0.6-V3ZTkQ3L3Ssdgsgel7uo54EbMXRG6BxqRoTfwrikU

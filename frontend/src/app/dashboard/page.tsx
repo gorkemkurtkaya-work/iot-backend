@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import Swal from 'sweetalert2';
+import { io } from 'socket.io-client';
 
 ChartJS.register(
   CategoryScale,
@@ -77,6 +78,11 @@ interface LogEntry {
   username: string;
 }
 
+interface SensorDataPayload {
+  type: string;
+  data: SensorData;
+}
+
 export default function DashboardPage() {
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -99,6 +105,7 @@ export default function DashboardPage() {
     filteredDevices: []
   });
   const router = useRouter();
+  const [socket, setSocket] = useState<typeof Socket | null>(null);
 
   // Action'ı Türkçe'ye çevir
   const getActionText = (action: string) => {
@@ -345,6 +352,43 @@ export default function DashboardPage() {
     // Her 30 saniyede bir verileri güncelle
     const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // WebSocket bağlantısını kur
+    const newSocket = io('http://localhost:3000', {
+      withCredentials: true
+    });
+
+    newSocket.on('connect', () => {
+      console.log('WebSocket bağlantısı kuruldu');
+    });
+
+    newSocket.on('sensorData', (data: SensorDataPayload) => {
+      if (data.type === 'new_sensor_data') {
+        // Yeni sensör verisi geldiğinde bildirim göster
+        Swal.fire({
+          title: 'Yeni Sensör Verisi!',
+          text: `Sıcaklık: ${data.data.temperature}°C, Nem: ${data.data.humidity}%`,
+          icon: 'info',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 5000,
+          timerProgressBar: true
+        });
+
+        // Sensör verilerini güncelle
+        setSensorData(prevData => [data.data, ...prevData]);
+      }
+    });
+
+    setSocket(newSocket);
+
+    // Component unmount olduğunda bağlantıyı kapat
+    return () => {
+      newSocket.close();
+    };
   }, []);
 
   // Kullanıcı bazlı filtreleme

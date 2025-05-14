@@ -1,13 +1,16 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import * as mqtt from 'mqtt';
+import { MqttClient, connect } from 'mqtt';
+import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { SensorDataService } from '../sensor-data/sensor-data.service';
 import { logger } from '../config/logger';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
-  private client;
+  private client: MqttClient;
 
-  constructor(private readonly sensorDataService: SensorDataService) {}
+  constructor(private readonly websocketGateway: WebsocketGateway, private readonly sensorDataService: SensorDataService) {
+    this.client = connect('mqtt://broker.emqx.io:1883');
+  }
 
   onModuleInit() {
     logger.info('MQTT servisi başlatılıyor');
@@ -15,9 +18,7 @@ export class MqttService implements OnModuleInit {
   }
 
   private connectAndSubscribe() {
-    logger.info('MQTT broker\'a bağlanılıyor: mqtt://localhost:1883');
-    this.client = mqtt.connect('mqtt://localhost:1883');
-
+    logger.info('MQTT broker\'a bağlanılıyor: mqtt://broker.emqx.io:1883');
     this.client.on('connect', () => {
       logger.info('MQTT bağlantısı kuruldu');
       
@@ -80,6 +81,12 @@ export class MqttService implements OnModuleInit {
           });
           throw dbErr;
         }
+
+        // WebSocket üzerinden tüm bağlı istemcilere veriyi gönder
+        this.websocketGateway.sendToAll('sensorData', {
+          type: 'new_sensor_data',
+          data: payload
+        });
       } catch (err) {
         logger.error('MQTT mesaj işleme hatası', { 
           error: err.message,

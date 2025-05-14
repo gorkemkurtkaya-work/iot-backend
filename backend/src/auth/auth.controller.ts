@@ -25,7 +25,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 1 gün
+      maxAge: 24 * 60 * 60 * 1000 
     });
 
     return result;
@@ -41,7 +41,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
-    // Cookie'yi temizle
     response.clearCookie('access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

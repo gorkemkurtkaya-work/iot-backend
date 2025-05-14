@@ -10,6 +10,10 @@ services:
     depends_on:
       - backend
 
+  testmicroservice:
+    build: ./testmicroservice
+    ports:
+      - "3080:3080"
   backend:
     build: ./backend
     ports:

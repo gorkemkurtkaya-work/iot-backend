@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Sensör Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-warning {
+            background-color: #ff9800;
+        }
+        .btn-danger {
+            background-color: #f44336;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>MQTT Sensör Test Paneli</h1>
+    
+    <div class="container">
+        <h2>Manuel Veri Gönderme</h2>
+        <button id="gonderBtn" class="btn">Sensör Verisi Gönder</button>
+        <div id="manuelSonuc"></div>
+    </div>
+    
+    <div class="container">
+        <h2>Otomatik Veri Gönderme</h2>
+        <button id="otomatikBaslatBtn" class="btn">Otomatik Göndermeyi Başlat</button>
+        <button id="otomatikDurdurBtn" class="btn btn-danger" disabled>Otomatik Göndermeyi Durdur</button>
+        <div id="otomatikDurum">Durum: Otomatik gönderme kapalı</div>
+    </div>
+    
+    <div class="container">
+        <h2>Son Gönderilen Veri</h2>
+        <pre id="sonVeri">Henüz veri gönderilmedi.</pre>
+    </div>
+
+    <script>
+        const gonderBtn = document.getElementById('gonderBtn');
+        const otomatikBaslatBtn = document.getElementById('otomatikBaslatBtn');
+        const otomatikDurdurBtn = document.getElementById('otomatikDurdurBtn');
+        const manuelSonuc = document.getElementById('manuelSonuc');
+        const otomatikDurum = document.getElementById('otomatikDurum');
+        const sonVeri = document.getElementById('sonVeri');
+        
+        let otomatikAktif = false;
+        
+        // Manuel veri gönderme
+        gonderBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/gonder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    manuelSonuc.innerHTML = `<p style="color: green;">✅ Başarılı: ${result.message}</p>`;
+                    sonVeri.textContent = JSON.stringify(result.data, null, 2);
+                } else {
+                    manuelSonuc.innerHTML = `<p style="color: red;">❌ Hata: ${result.message}</p>`;
+                }
+            } catch (error) {
+                manuelSonuc.innerHTML = `<p style="color: red;">❌ Hata: ${error.message}</p>`;
+            }
+        });
+        
+        // Otomatik veri gönderme başlatma
+        otomatikBaslatBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/otomatik-gonder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ durum: 'baslat' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    otomatikAktif = true;
+                    otomatikDurum.textContent = 'Durum: Otomatik gönderme aktif (15 saniyede bir)';
+                    otomatikBaslatBtn.disabled = true;
+                    otomatikDurdurBtn.disabled = false;
+                }
+            } catch (error) {
+                otomatikDurum.textContent = `Hata: ${error.message}`;
+            }
+        });
+        
+        // Otomatik veri gönderme durdurma
+        otomatikDurdurBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/otomatik-gonder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ durum: 'durdur' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    otomatikAktif = false;
+                    otomatikDurum.textContent = 'Durum: Otomatik gönderme kapalı';
+                    otomatikBaslatBtn.disabled = false;
+                    otomatikDurdurBtn.disabled = true;
+                }
+            } catch (error) {
+                otomatikDurum.textContent = `Hata: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

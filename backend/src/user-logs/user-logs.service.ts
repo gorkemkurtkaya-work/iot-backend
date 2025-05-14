@@ -8,7 +8,6 @@ import { logger } from '../config/logger';
 export class UserLogsService {
   async create(createUserLogDto: CreateUserLogDto): Promise<UserLog> {
     try {
-      // Şu anki zamana 3 saat ekle
       const now = new Date();
       const turkeyTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));
 

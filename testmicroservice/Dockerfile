@@ -13,4 +13,4 @@ COPY . .
 EXPOSE 5173
 
 
-CMD ["npm", "run", "start:dev"]
+CMD ["node", "app.js"]

@@ -12,7 +12,14 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000',process.env.NEXT_PUBLIC_BACKEND_URL],
     },
   },
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   devIndicators: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;

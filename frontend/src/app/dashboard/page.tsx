@@ -949,8 +949,8 @@ export default function DashboardPage() {
 
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Son Sensör Kayıtları</h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredSensorData.slice(0, 50).map((data) => (
-                <div key={data.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+              {filteredSensorData.slice(0, 50).map((data, index) => (
+                <div key={`sensor-${data.id}-${index}`} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
                   <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">
                     Sensör: {data.sensor_id}
                   </h3>

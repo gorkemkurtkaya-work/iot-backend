@@ -61,13 +61,13 @@ export default function LogsPage() {
       setIsLoading(true);
       
       // Kullanıcıları çek
-      const usersResponse = await axios.get('http://localhost:3000/users', {
+      const usersResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, {
         withCredentials: true
       });
       setUsers(usersResponse.data);
 
       // Logları çek
-      const logsResponse = await axios.get('http://localhost:3000/user-logs', {
+      const logsResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user-logs`, {
         withCredentials: true
       });
       

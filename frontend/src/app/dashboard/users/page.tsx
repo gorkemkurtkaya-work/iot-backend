@@ -46,7 +46,7 @@ export default function UsersPage() {
         setLoading(true);
         
         // Kullanıcı profili bilgilerini al
-        const userResponse = await axios.get('http://localhost:3000/auth/profile', {
+        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, {
           withCredentials: true
         });
         
@@ -58,13 +58,13 @@ export default function UsersPage() {
               userResponse.data.role === UserRole.COMPANY_ADMIN) {
             
             // Şirketleri çek
-            const companiesResponse = await axios.get('http://localhost:3000/companies', {
+            const companiesResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, {
               withCredentials: true
             });
             setCompanies(companiesResponse.data);
             
             // Kullanıcıları çek
-            const usersResponse = await axios.get('http://localhost:3000/users', {
+            const usersResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, {
               withCredentials: true
             });
             
@@ -118,7 +118,7 @@ export default function UsersPage() {
     
     try {
       const response = await axios.post(
-        'http://localhost:3000/users/register',
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/register`,
         newUser,
         { withCredentials: true }
       );
@@ -155,7 +155,7 @@ export default function UsersPage() {
   const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/users/${userId}/role`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/role`,
         { role: newRole },
         { withCredentials: true }
       );
@@ -176,7 +176,7 @@ export default function UsersPage() {
   const handleUpdateUserCompany = async (userId: string, companyId: string) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/users/${userId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}`,
         { company_id: companyId },
         { withCredentials: true }
       );

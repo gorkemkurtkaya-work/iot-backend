@@ -68,7 +68,7 @@ export default function CihazlarPage() {
   const handleAssignDevice = async (deviceId: string, userId: string) => {
     try {
       await axios.post(
-        'http://localhost:3000/device-assignments',
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/device-assignments`,
         {
           user_id: userId,
           device_id: deviceId
@@ -82,7 +82,7 @@ export default function CihazlarPage() {
           if (device.id === deviceId) {
             try {
               const assignmentsResponse = await axios.get(
-                `http://localhost:3000/device-assignments/device/${device.id}`,
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/device-assignments/device/${device.id}`,
                 { withCredentials: true }
               );
 
@@ -90,7 +90,7 @@ export default function CihazlarPage() {
                 assignmentsResponse.data.map(async (assignment: DeviceAssignment) => {
                   try {
                     const userResponse = await axios.get(
-                      `http://localhost:3000/users/${assignment.user_id}`,
+                     `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${assignment.user_id}`,
                       { withCredentials: true }
                     );
                     return {
@@ -195,7 +195,7 @@ export default function CihazlarPage() {
         setLoading(true);
         
         // Kullanıcı profili bilgisini al
-        const userResponse = await axios.get('http://localhost:3000/auth/profile', {
+        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, {
           withCredentials: true
         });
         
@@ -204,9 +204,9 @@ export default function CihazlarPage() {
           
           // Paralel olarak tüm verileri çek
           const [devicesResponse, usersResponse, companiesResponse] = await Promise.all([
-            axios.get('http://localhost:3000/devices', { withCredentials: true }),
-            axios.get('http://localhost:3000/users', { withCredentials: true }),
-            axios.get('http://localhost:3000/companies', { withCredentials: true })
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/devices`, { withCredentials: true }),
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, { withCredentials: true }),
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, { withCredentials: true })
           ]);
           
           let filteredDevices = devicesResponse.data;
@@ -220,7 +220,7 @@ export default function CihazlarPage() {
           } else if (userResponse.data.role === UserRole.USER) {
             // Normal kullanıcı sadece kendisine atanmış cihazları görebilir
             const userAssignmentsResponse = await axios.get(
-              `http://localhost:3000/device-assignments/user/${userResponse.data.id}`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/device-assignments/user/${userResponse.data.id}`,
               { withCredentials: true }
             );
             
@@ -241,7 +241,7 @@ export default function CihazlarPage() {
                 let assignmentsWithUsers = [];
                 try {
                   const assignmentsResponse = await axios.get(
-                    `http://localhost:3000/device-assignments/device/${device.id}`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/device-assignments/device/${device.id}`,
                     { withCredentials: true }
                   );
 
@@ -250,7 +250,7 @@ export default function CihazlarPage() {
                     assignmentsResponse.data.map(async (assignment: DeviceAssignment) => {
                       try {
                         const userResponse = await axios.get(
-                          `http://localhost:3000/users/${assignment.user_id}`,
+                          `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${assignment.user_id}`,
                           { withCredentials: true }
                         );
                         return {
@@ -272,7 +272,7 @@ export default function CihazlarPage() {
                 try {
                   if (device.company_id) {
                     const companyResponse = await axios.get(
-                      `http://localhost:3000/companies/${device.company_id}`,
+                      `${process.env.NEXT_PUBLIC_BACKEND_URL}/companies/${device.company_id}`,
                       { withCredentials: true }
                     );
                     companyData = companyResponse.data;
@@ -332,7 +332,7 @@ export default function CihazlarPage() {
     
     try {
       const response = await axios.post(
-        'http://localhost:3000/devices',
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/devices`,
         newDevice,
         { withCredentials: true }
       );
@@ -401,7 +401,7 @@ export default function CihazlarPage() {
     
     try {
       const response = await axios.put(
-        `http://localhost:3000/devices/${editDeviceId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/devices/${editDeviceId}`,
         editDevice,
         { withCredentials: true }
       );
@@ -458,7 +458,7 @@ export default function CihazlarPage() {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:3000/devices/${id}`, {
+        await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/devices/${id}`, {
           withCredentials: true
         });
         

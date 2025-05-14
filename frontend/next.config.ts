@@ -12,6 +12,7 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000',process.env.NEXT_PUBLIC_BACKEND_URL],
     },
   },
+  devIndicators: false,
 };
 
 export default nextConfig;

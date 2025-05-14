@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import {
@@ -15,7 +15,6 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import Swal from 'sweetalert2';
-import { Socket as ClientSocket } from 'socket.io-client';
 import io from 'socket.io-client';
 
 ChartJS.register(
@@ -106,7 +105,8 @@ export default function DashboardPage() {
     filteredDevices: []
   });
   const router = useRouter();
-  const [socket, setSocket] = useState<ClientSocket | null>(null);
+  const socketRef = useRef<any>(null);
+  const socketInitialized = useRef(false);
 
   // Action'ı Türkçe'ye çevir
   const getActionText = (action: string) => {
@@ -132,7 +132,7 @@ export default function DashboardPage() {
         setLoading(true);
         
         // Kullanıcı bilgisini al
-        const userResponse = await axios.get('http://localhost:3000/auth/profile', { 
+        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, { 
           withCredentials: true 
         });
         setCurrentUser(userResponse.data);
@@ -149,7 +149,7 @@ export default function DashboardPage() {
           try {
             // Kullanıcının atanmış cihazlarını al
             const assignmentsResponse = await axios.get(
-              `http://localhost:3000/device-assignments/user/${userResponse.data.id}`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/device-assignments/user/${userResponse.data.id}`,
               { withCredentials: true }
             );
             
@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
             if (assignedDeviceIds.length > 0) {
               // Önce cihazları çek
-              const devicesResponse = await axios.get('http://localhost:3000/devices', { 
+              const devicesResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/devices`, { 
                 withCredentials: true
               });
               
@@ -172,7 +172,7 @@ export default function DashboardPage() {
               const sensorPromises = devicesData.map(async (device: Device) => {
                 try {
                   const response = await axios.get(
-                    `http://localhost:3000/sensor-data/${device.sensor_id}`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/sensor-data/${device.sensor_id}`,
                     { withCredentials: true }
                   );
                   return response.data;
@@ -189,7 +189,7 @@ export default function DashboardPage() {
             
             // Kullanıcının kendi şirket bilgisini al
             const companyResponse = await axios.get(
-              `http://localhost:3000/companies/${userResponse.data.company_id}`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/companies/${userResponse.data.company_id}`,
               { withCredentials: true }
             );
             companiesData = [companyResponse.data];
@@ -203,7 +203,7 @@ export default function DashboardPage() {
           // Company Admin için şirket verilerini çek
           try {
             // Önce cihazları çek
-            const devicesResponse = await axios.get('http://localhost:3000/devices', { 
+            const devicesResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/devices`, { 
               withCredentials: true
             });
             
@@ -217,7 +217,7 @@ export default function DashboardPage() {
               const sensorPromises = devicesData.map(async (device: Device) => {
                 try {
                   const response = await axios.get(
-                    `http://localhost:3000/sensor-data/${device.sensor_id}`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/sensor-data/${device.sensor_id}`,
                     { withCredentials: true }
                   );
                   return response.data;
@@ -234,13 +234,13 @@ export default function DashboardPage() {
 
             // Şirket bilgilerini al
             const companyResponse = await axios.get(
-              `http://localhost:3000/companies/${userResponse.data.company_id}`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/companies/${userResponse.data.company_id}`,
               { withCredentials: true }
             );
             companiesData = [companyResponse.data];
             
             // Şirkete ait kullanıcıları al
-            const usersResponse = await axios.get('http://localhost:3000/users', { 
+            const usersResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, { 
               withCredentials: true 
             });
             usersData = usersResponse.data.filter((user: User) => 
@@ -254,7 +254,7 @@ export default function DashboardPage() {
             const logPromises = companyUserIds.map(async (userId: string) => {
               try {
                 const response = await axios.get(
-                  `http://localhost:3000/user-logs/user/${userId}`,
+                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/user-logs/user/${userId}`,
                   { withCredentials: true }
                 );
                 return response.data;
@@ -283,10 +283,10 @@ export default function DashboardPage() {
         } else {
           // System Admin için tüm verileri çek
           const [sensorResponse, companiesResponse, usersResponse, devicesResponse] = await Promise.all([
-            axios.get('http://localhost:3000/sensor-data', { withCredentials: true }),
-            axios.get('http://localhost:3000/companies', { withCredentials: true }),
-            axios.get('http://localhost:3000/users', { withCredentials: true }),
-            axios.get('http://localhost:3000/devices', { withCredentials: true })
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/sensor-data`, { withCredentials: true }),
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, { withCredentials: true }),
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, { withCredentials: true }),
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/devices`, { withCredentials: true })
           ]);
           
           sensorData = sensorResponse.data;
@@ -298,7 +298,7 @@ export default function DashboardPage() {
           const logPromises = usersData.map(async (user: User) => {
             try {
               const response = await axios.get(
-                `http://localhost:3000/user-logs/user/${user.id}`,
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/user-logs/user/${user.id}`,
                 { withCredentials: true }
               );
               return response.data;
@@ -354,21 +354,28 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // WebSocket bağlantısını kur/kapat
   useEffect(() => {
-    // WebSocket bağlantısını kullanıcı oturumu kurulduktan sonra kur
+    // Kullanıcı henüz yoksa bağlantı kurma
     if (!currentUser) return;
-
+    
+    // WebSocket bağlantısı daha önce başlatıldıysa tekrar başlatma
+    if (socketInitialized.current) return;
+    socketInitialized.current = true;
+    
+    console.log('⚡ WebSocket bağlantısı başlatılıyor...');
+    
     // WebSocket bağlantısını kur
-    const newSocket = io('http://localhost:3000', {
+    const newSocket = io(`${process.env.NEXT_PUBLIC_BACKEND_URL}`, {
       transports: ['websocket'],
-      // withCredentials özelliği ConnectOpts tipinde yok, bu yüzden kaldırıldı
     });
+    
+    socketRef.current = newSocket;
 
     newSocket.on('connect', () => {
       console.log('🔌 WebSocket bağlantısı kuruldu');
     });
 
-    // Test mesajını dinle
     newSocket.on('test', (data: any) => {
       console.log('📡 WebSocket test mesajı alındı:', data);
     });
@@ -429,14 +436,16 @@ export default function DashboardPage() {
       console.error('❌ WebSocket hatası:', error);
     });
 
-    setSocket(newSocket);
-
     // Component unmount olduğunda bağlantıyı kapat
     return () => {
       console.log('🔌 WebSocket bağlantısı kapatılıyor...');
-      newSocket.close();
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+        socketInitialized.current = false;
+      }
     };
-  }, [currentUser, devices]);
+  }, [currentUser]); // Sadece currentUser değiştiğinde çalış
 
   // Kullanıcının bu sensör verisini görmeye yetkisi var mı kontrol et
   const isSensorDataAllowedForUser = (user: User | null, sensorData: SensorData, devices: Device[]): boolean => {
@@ -480,7 +489,7 @@ export default function DashboardPage() {
       if (currentUser.role === UserRole.USER) {
         // Normal kullanıcı için atanmış cihazların verilerini filtrele
         const assignmentsResponse = await axios.get(
-          `http://localhost:3000/device-assignments/user/${currentUser.id}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/device-assignments/user/${currentUser.id}`,
           { withCredentials: true }
         );
         

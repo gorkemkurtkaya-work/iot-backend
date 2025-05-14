@@ -58,7 +58,7 @@ export default function CompaniesPage() {
         setLoading(true);
         
         // Kullanıcı profili bilgilerini al
-        const userResponse = await axios.get('http://localhost:3000/auth/profile', {
+        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, {
           withCredentials: true
         });
         
@@ -67,12 +67,12 @@ export default function CompaniesPage() {
           
           // Sadece System Admin ise tüm şirketleri getir
           if (userResponse.data.role === UserRole.SYSTEM_ADMIN) {
-            const companiesResponse = await axios.get('http://localhost:3000/companies', {
+            const companiesResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, {
               withCredentials: true
             });
             setCompanies(companiesResponse.data);
             
-            const usersResponse = await axios.get('http://localhost:3000/users', {
+            const usersResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, {
               withCredentials: true
             });
             setUsers(usersResponse.data);
@@ -98,7 +98,7 @@ export default function CompaniesPage() {
     try {
       setAddingCompany(true);
       const response = await axios.post(
-        'http://localhost:3000/companies', 
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, 
         { name: newCompanyName },
         { withCredentials: true }
       );
@@ -136,7 +136,7 @@ export default function CompaniesPage() {
     
     try {
       await axios.put(
-        `http://localhost:3000/companies/${editCompanyId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/companies/${editCompanyId}`,
         { name: editCompanyName },
         { withCredentials: true }
       );
@@ -181,7 +181,7 @@ export default function CompaniesPage() {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:3000/companies/${id}`, {
+        await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies/${id}`, {
           withCredentials: true
         });
         
@@ -233,7 +233,7 @@ export default function CompaniesPage() {
     
     try {
       const response = await axios.post(
-        'http://localhost:3000/users/register',
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/register`,
         newUser,
         { withCredentials: true }
       );
@@ -271,7 +271,7 @@ export default function CompaniesPage() {
   const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/users/${userId}/role`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/role`,
         { role: newRole },
         { withCredentials: true }
       );

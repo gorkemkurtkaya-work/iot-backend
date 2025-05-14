@@ -112,7 +112,7 @@ export default function EntegrasyonlarPage() {
         setLoading(true);
         
         // Kullanıcı profili bilgisini al
-        const userResponse = await axios.get('http://localhost:3000/auth/profile', {
+        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, {
           withCredentials: true
         });
         
@@ -121,8 +121,8 @@ export default function EntegrasyonlarPage() {
           
           // Paralel olarak tüm verileri çek
           const [integrationsResponse, companiesResponse] = await Promise.all([
-            axios.get('http://localhost:3000/integrations', { withCredentials: true }),
-            axios.get('http://localhost:3000/companies', { withCredentials: true })
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/integrations`, { withCredentials: true }),
+            axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, { withCredentials: true })
           ]);
           
           let filteredIntegrations = integrationsResponse.data;
@@ -140,7 +140,7 @@ export default function EntegrasyonlarPage() {
             filteredIntegrations.map(async (integration: Integration) => {
               try {
                 const companyResponse = await axios.get(
-                  `http://localhost:3000/companies/${integration.company_id}`,
+                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/companies/${integration.company_id}`,
                   { withCredentials: true }
                 );
                 
@@ -180,7 +180,7 @@ export default function EntegrasyonlarPage() {
     
     try {
       const response = await axios.post(
-        'http://localhost:3000/integrations',
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/integrations`,
         newIntegration,
         { withCredentials: true }
       );
@@ -226,7 +226,7 @@ export default function EntegrasyonlarPage() {
     
     try {
       const response = await axios.put(
-        `http://localhost:3000/integrations/${editIntegrationId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/integrations/${editIntegrationId}`,
         editIntegration,
         { withCredentials: true }
       );
@@ -263,7 +263,7 @@ export default function EntegrasyonlarPage() {
     }
     
     try {
-      await axios.delete(`http://localhost:3000/integrations/${id}`, {
+      await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/integrations/${id}`, {
         withCredentials: true
       });
       
@@ -280,7 +280,7 @@ export default function EntegrasyonlarPage() {
     try {
       const newStatus = integration.status === 'active' ? 'inactive' : 'active';
       const response = await axios.patch(
-        `http://localhost:3000/integrations/${integration.id}/status`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/integrations/${integration.id}/status`,
         { status: newStatus },
         { withCredentials: true }
       );

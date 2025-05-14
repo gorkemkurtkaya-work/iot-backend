@@ -28,7 +28,7 @@ export default function DashboardLayout({
       try {
         // Önce cookie'den kullanıcı profili bilgisini almayı dene
         try {
-          const profileResponse = await axios.get('http://localhost:3000/auth/profile', {
+          const profileResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, {
             withCredentials: true
           });
           
@@ -63,10 +63,12 @@ export default function DashboardLayout({
             title: 'Oturum Açılmadı',
             text: 'Oturum açmanız gerekiyor.',
           });
+          localStorage.removeItem('user_info');
           router.push('/login');
         }
       } catch (error) {
         console.error('Oturum kontrolü yapılırken hata oluştu:', error);
+        localStorage.removeItem('user_info');
         router.push('/login');
       }
     };
@@ -90,7 +92,7 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:3000/auth/logout', {}, {
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {}, {
         withCredentials: true
       });
       // localStorage'daki kullanıcı bilgilerini temizle

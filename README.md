@@ -133,6 +133,9 @@ MQTT_PASSWORD=   # Gerekliyse bırak
 - **Company Admin:** Kendi şirketi için kullanıcı ve cihaz atamaları yapabilir, verileri ve logları görüntüleyebilir.
 - **User:** Sadece yetkili olduğu cihazlardan gelen sensör verilerini görüntüleyebilir.
 
+### 🗃️ Veritabanı Mimarisi
+
+![image](https://github.com/user-attachments/assets/03a2a93d-7790-460b-9e91-86d1748aacfc)
 
 
 ### 🔄 Sensör Verisi Akışı

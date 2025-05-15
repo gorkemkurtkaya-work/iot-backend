@@ -41,6 +41,90 @@ Bu proje, **fabrikalardaki IoT sensörlerinden gelen verileri MQTT protokolü ü
 - **WebSocket üzerinden anlık veri güncelleme**
 
 ---
+## 🚀 Projeyi Başlatma
+
+### 🐳 Docker Kullanımı
+- Projeyi klonladıktan sonra sadece tek komutla tüm servisleri ayağa kaldırabilirsiniz:
+```
+docker-compose up --build
+```
+Bu komut:
+
+- Backend (NestJS) (iot-backend)
+
+- Frontend (Next.js) (iot-frontend)
+
+- Test Microservice (testmicroservice)
+
+üçünü de aynı anda ayağa kaldırır.
+
+### 💻 Lokal Geliştirme
+
+- Tüm servisleri ayrı ayrı localde çalıştırmak isterseniz:
+
+#### 🧠 Backend (NestJS)
+```
+cd backend
+npm install
+npm run start
+```
+##### 🧠 backend/.env
+```
+# Supabase bağlantı bilgileri
+SUPABASE_URL=https://your-supabase-url.supabase.co
+SUPABASE_KEY=your-supabase-service-key
+# MQTT Broker bilgileri (TLS yoksa mqtt://, TLS varsa mqtts://)
+MQTT_BROKER_URL=mqtt://your-broker.emqxcloud.com
+MQTT_USERNAME=mqtt
+MQTT_PASSWORD=your-password
+# JWT Secret
+JWT_SECRET=your_jwt_secret
+# WebSocket CORS izinli frontend URL
+FRONTEND_URL=https://your-frontend.run.app
+```
+
+#### 💻 Frontend (Next.js)
+```
+cd frontend
+npm install
+npm run dev
+```
+
+##### 💻 frontend/.env.local
+```
+# Backend API adresi
+NEXT_PUBLIC_BACKEND_URL=https://your-backend.run.app
+```
+
+#### 🧪 Test Microservice
+```
+cd testmicroservice
+npm install
+node app.js
+```
+##### 🧪 testmicroservice/.env
+```
+# EMQX MQTT bağlantı bilgileri (TLS ile)
+MQTT_BROKER_URL=mqtts://your-broker.emqxcloud.com:8883
+MQTT_USERNAME=mqtt
+MQTT_PASSWORD=your-password
+```
+### ⚠️ MQTT Broker'ı Localde Çalıştırmak İstiyorsan
+-Projeyi localde test etmek ve kendi broker’ını çalıştırmak istiyorsan Eclipse Mosquitto kullanarak local MQTT broker kurabilirsin.
+```
+docker run -it -p 1883:1883 -p 9001:9001 eclipse-mosquitto
+```
+- 1883: MQTT bağlantısı (mqtt://)
+
+- 9001: WebSocket bağlantısı (ws://)
+
+#### 🛠️ 2. .env Ayarında MQTT Broker’ı Local Olarak Ayarla
+```
+MQTT_BROKER_URL=mqtt://localhost:1883
+MQTT_USERNAME=   # Gerekliyse bırak
+MQTT_PASSWORD=   # Gerekliyse bırak
+```
+---
 
 ## 🧠 Sistem Mimarisi
 
@@ -48,6 +132,8 @@ Bu proje, **fabrikalardaki IoT sensörlerinden gelen verileri MQTT protokolü ü
 - **System Admin:** Şirket, kullanıcı, cihaz ekleyebilir. Tüm loglara ve verilere erişebilir.
 - **Company Admin:** Kendi şirketi için kullanıcı ve cihaz atamaları yapabilir, verileri ve logları görüntüleyebilir.
 - **User:** Sadece yetkili olduğu cihazlardan gelen sensör verilerini görüntüleyebilir.
+
+
 
 ### 🔄 Sensör Verisi Akışı
 
@@ -88,3 +174,16 @@ Bu proje, **fabrikalardaki IoT sensörlerinden gelen verileri MQTT protokolü ü
   "action": "viewed_logs"
 }
 ```
+- Bu kayıtlar üzerinden kullanıcıların hangi saatlerde aktif olduğu analiz edilebilir.
+
+### 🧪 Test Microservice
+Gerçek sensörlere gerek kalmadan test amacıyla hazırlanmış bir mikroservistir.
+İsterseniz anlık olarak veya her 15 saniyede bir rastgele sensör verisi üretir ve EMQX MQTT Broker’a yayınlar.
+
+Canlı test etmek için:
+https://testmicroservice-hydust6b3a-ew.a.run.app
+
+
+### 🔄 Deployment
+Tüm servisler Google Cloud Run üzerinde deploy edildi.
+Cloud NAT + VPC Connector kullanılarak TCP çıkış (MQTT 8883) sağlandı.

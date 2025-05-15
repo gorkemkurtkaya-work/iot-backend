@@ -343,6 +343,7 @@ export default function DashboardPage() {
           text: 'Veri çekme işlemi sırasında bir hata oluştu.',
           confirmButtonText: 'Tamam'
         });
+        localStorage.removeItem('user_info');
         console.error('Veri çekme hatası:', err);
       } finally {
         setLoading(false);

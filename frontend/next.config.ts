@@ -14,12 +14,13 @@ const nextConfig = {
   },
   transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ["error"] } : false
   },
   devIndicators: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
+  output: 'standalone',
 };
 
 export default nextConfig;

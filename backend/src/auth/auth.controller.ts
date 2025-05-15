@@ -22,10 +22,10 @@ export class AuthController {
     
     // Token'ı cookie'ye kaydet
     response.cookie('access_token', result.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 
+      httpOnly: true, 
+      sameSite: 'none', 
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: true
     });
 
     return result;

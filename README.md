@@ -1,7 +1,7 @@
 # 🏭 IoT Sensör Takip Sistemi (NestJS + MQTT + Next.js + Socket.io + Supabase)
 
 Bu proje, **fabrikalardaki IoT sensörlerinden gelen verileri MQTT protokolü üzerinden toplayan**, bu verileri **gerçek zamanlı yayınlayan**, **kullanıcı ve şirket yönetimi sağlayan**, **loglama ve güvenlik mekanizmaları içeren** kapsamlı bir sistemdir.
-
+> **Bu proje Görkem Kurtkaya tarafından geliştirilmiştir.**
 ---
 
 ## 🚀 Canlı Linkler
@@ -187,3 +187,15 @@ https://testmicroservice-hydust6b3a-ew.a.run.app
 ### 🔄 Deployment
 Tüm servisler Google Cloud Run üzerinde deploy edildi.
 Cloud NAT + VPC Connector kullanılarak TCP çıkış (MQTT 8883) sağlandı.
+
+## 🖼️ Uygulama Görselleri
+
+| 💻 Frontend Arayüzü | 📊 Sistem Logları |
+|---------------------|------------------------------|
+| ![Frontend](https://github.com/user-attachments/assets/75349704-6cb8-4bb6-92bb-783f483b6b30) | ![Sistem Logları](https://github.com/user-attachments/assets/0752b32a-93ed-4085-831e-6c2945d8ba0a) |
+| ![Frontend](https://github.com/user-attachments/assets/6591df92-10a6-449a-916a-368679645db8) | ![Sistem Logları](https://github.com/user-attachments/assets/b6f5c684-a0c1-43df-9516-d1e534cf83b0) |
+
+<!-- Yeni satıra başka görseller de ekleyebilirsin -->
+### 🧪 Testmicroservice  
+
+ ![image](https://github.com/user-attachments/assets/cb9eea33-c35f-47e6-8ffb-e3fad1f819e6) 

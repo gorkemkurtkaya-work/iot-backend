@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 enum UserRole {
   SYSTEM_ADMIN = 'system_admin',
@@ -11,7 +12,7 @@ enum UserRole {
 
 interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
   role: UserRole;
   company_id: string;
@@ -32,7 +33,7 @@ export default function UsersPage() {
   // Yeni kullanıcı ekleme için
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({
-    username: '',
+    name: '',
     email: '',
     password: '',
     role: UserRole.USER,
@@ -45,7 +46,7 @@ export default function UsersPage() {
         setLoading(true);
         
         // Kullanıcı profili bilgilerini al
-        const userResponse = await axios.get('http://localhost:3000/auth/profile', {
+        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, {
           withCredentials: true
         });
         
@@ -57,13 +58,13 @@ export default function UsersPage() {
               userResponse.data.role === UserRole.COMPANY_ADMIN) {
             
             // Şirketleri çek
-            const companiesResponse = await axios.get('http://localhost:3000/companies', {
+            const companiesResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, {
               withCredentials: true
             });
             setCompanies(companiesResponse.data);
             
             // Kullanıcıları çek
-            const usersResponse = await axios.get('http://localhost:3000/users', {
+            const usersResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, {
               withCredentials: true
             });
             
@@ -96,28 +97,57 @@ export default function UsersPage() {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Company Admin için otomatik şirket ataması
+    if (currentUser?.role === UserRole.COMPANY_ADMIN) {
+      setNewUser(prev => ({
+        ...prev,
+        company_id: currentUser.company_id
+      }));
+    }
+
+    // company_id kontrolü
+    if (!newUser.company_id) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Şirket seçimi zorunludur',
+        confirmButtonText: 'Tamam'
+      });
+      return;
+    }
+    
     try {
       const response = await axios.post(
-        'http://localhost:3000/users/register',
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/register`,
         newUser,
         { withCredentials: true }
       );
       
-      // Yeni kullanıcıyı kullanıcılar listesine ekle
       setUsers([...users, response.data]);
-      
-      // Modal'ı kapat ve form'u sıfırla
       setShowAddModal(false);
       setNewUser({
-        username: '',
+        name: '',
         email: '',
         password: '',
         role: UserRole.USER,
         company_id: ''
       });
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı!',
+        text: 'Kullanıcı başarıyla eklendi.',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (err) {
       console.error('Kullanıcı eklenirken hata:', err);
-      setError('Kullanıcı oluşturulurken bir hata oluştu');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Kullanıcı oluşturulurken bir hata oluştu.',
+        confirmButtonText: 'Tamam'
+      });
     }
   };
   
@@ -125,7 +155,7 @@ export default function UsersPage() {
   const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/users/${userId}/role`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/role`,
         { role: newRole },
         { withCredentials: true }
       );
@@ -146,7 +176,7 @@ export default function UsersPage() {
   const handleUpdateUserCompany = async (userId: string, companyId: string) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/users/${userId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}`,
         { company_id: companyId },
         { withCredentials: true }
       );
@@ -188,7 +218,7 @@ export default function UsersPage() {
     if (!showAddModal) return null;
     
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-0 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
           <button 
             onClick={() => setShowAddModal(false)}
@@ -206,17 +236,17 @@ export default function UsersPage() {
           <form onSubmit={handleAddUser}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                   Kullanıcı Adı
                 </label>
                 <input
                   type="text"
-                  name="username"
-                  id="username"
+                  name="name"
+                  id="name"
                   required
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={newUser.username}
-                  onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
                 />
               </div>
               
@@ -270,13 +300,11 @@ export default function UsersPage() {
                     ))}
                   </select>
                 ) : (
-                  // Company Admin ise kendi şirketini otomatik ata
                   <div>
                     <input
                       type="hidden"
                       name="company_id"
                       value={currentUser?.company_id || ''}
-                      onChange={() => {}}
                     />
                     <p className="mt-1 text-sm text-gray-600">
                       {getCompanyName(currentUser?.company_id || '')}
@@ -392,7 +420,7 @@ export default function UsersPage() {
                 {users.map(user => (
                   <tr key={user.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{user.email}</div>

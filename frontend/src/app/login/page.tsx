@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const response = await axios.post('http://localhost:3000/auth/login', data, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, data, {
         withCredentials: true
       });
       

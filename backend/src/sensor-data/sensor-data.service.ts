@@ -38,7 +38,6 @@ export class SensorDataService {
   }
 
   async findByUser(user_id: string): Promise<SensorData[]> {
-    // 1. Kullanıcının atanmış cihazlarını çek
     const { data: assignments, error: assignmentError } = await supabase
       .from('device_assignments')
       .select('device_id')
@@ -47,7 +46,6 @@ export class SensorDataService {
     if (assignmentError) throw assignmentError;
     const deviceIds = assignments.map((a) => a.device_id);
   
-    // 2. Bu cihazlara karşılık gelen sensor_id'leri çek
     const { data: devices, error: deviceError } = await supabase
       .from('devices')
       .select('sensor_id')
@@ -56,7 +54,6 @@ export class SensorDataService {
     if (deviceError) throw deviceError;
     const sensorIds = devices.map((d) => d.sensor_id);
   
-    // 3. sensor_data tablosundan verileri çek
     const { data: sensorData, error: dataError } = await supabase
       .from('sensor_data')
       .select('*')

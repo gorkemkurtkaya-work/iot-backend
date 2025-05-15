@@ -40,7 +40,6 @@ export class AuthService {
   }
 
   async getProfile(user: any) {
-    // Token'dan gelen user bilgisine ek olarak tam kullanıcı bilgisini çekelim
     const userDetails = await this.usersService.findById(user.id);
     if (!userDetails) {
       throw new UnauthorizedException('Kullanıcı bulunamadı');
@@ -49,5 +48,18 @@ export class AuthService {
     // Hassas bilgileri çıkaralım
     const { password, ...result } = userDetails;
     return result;
+  }
+
+  async logout(user: any) {
+    try {
+
+      
+      return {
+        success: true,
+        message: 'Başarıyla çıkış yapıldı'
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Çıkış yapılırken bir hata oluştu');
+    }
   }
 } 

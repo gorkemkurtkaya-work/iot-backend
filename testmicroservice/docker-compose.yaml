@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+  testmicroservice:
+    build: ./testmicroservice
+    ports:
+      - "8080:8080"

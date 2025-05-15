@@ -1,13 +1,32 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import * as mqtt from 'mqtt';
+import { MqttClient, connect, IClientOptions } from 'mqtt';
+import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { SensorDataService } from '../sensor-data/sensor-data.service';
 import { logger } from '../config/logger';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
-  private client;
+  private client: MqttClient;
+  private brokerUrl: string;
+  private mqttOptions: IClientOptions;
 
-  constructor(private readonly sensorDataService: SensorDataService) {}
+  constructor(private readonly websocketGateway: WebsocketGateway, private readonly sensorDataService: SensorDataService) {
+    this.brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://broker.emqx.io:1883';
+    
+    this.mqttOptions = {
+      username: process.env.MQTT_USERNAME || 'default',
+      password: process.env.MQTT_PASSWORD || 'default',
+      reconnectPeriod: 5000,
+    };
+
+    logger.debug('MQTT yapılandırması', { 
+      url: this.brokerUrl, 
+      username: this.mqttOptions.username,
+      hasPassword: !!this.mqttOptions.password 
+    });
+    
+    this.client = connect(this.brokerUrl, this.mqttOptions);
+  }
 
   onModuleInit() {
     logger.info('MQTT servisi başlatılıyor');
@@ -15,9 +34,7 @@ export class MqttService implements OnModuleInit {
   }
 
   private connectAndSubscribe() {
-    logger.info('MQTT broker\'a bağlanılıyor: mqtt://localhost:1883');
-    this.client = mqtt.connect('mqtt://localhost:1883');
-
+    logger.info('MQTT broker\'a bağlanılıyor: ' + this.brokerUrl);
     this.client.on('connect', () => {
       logger.info('MQTT bağlantısı kuruldu');
       
@@ -80,6 +97,18 @@ export class MqttService implements OnModuleInit {
           });
           throw dbErr;
         }
+
+        // WebSocket üzerinden tüm bağlı istemcilere veriyi gönder
+        logger.info('WebSocket üzerinden sensör verisi gönderiliyor', { 
+          payload_type: typeof payload,
+          payload_content: payload,
+          event: 'sensorData' 
+        });
+        
+        this.websocketGateway.sendToAll('sensorData', {
+          type: 'new_sensor_data',
+          data: payload
+        });
       } catch (err) {
         logger.error('MQTT mesaj işleme hatası', { 
           error: err.message,

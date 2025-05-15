@@ -1,7 +1,26 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  webpack: (config: any) => {
+    config.externals.push({
+      'react-native-config': 'react-native-config',
+    });
+    return config;
+  },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000',process.env.NEXT_PUBLIC_BACKEND_URL],
+    },
+  },
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ["error"] } : false
+  },
+  devIndicators: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  output: 'standalone',
 };
 
 export default nextConfig;

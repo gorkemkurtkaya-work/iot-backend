@@ -22,10 +22,10 @@ export class AuthController {
     
     // Token'ı cookie'ye kaydet
     response.cookie('access_token', result.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 1 gün
+      httpOnly: true, 
+      sameSite: 'none', 
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: true
     });
 
     return result;
@@ -35,5 +35,18 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getProfile(@Req() request: Request) {
     return this.authService.getProfile(request.user);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    response.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+
+    return this.authService.logout(request.user);
   }
 } 

@@ -25,4 +25,14 @@ export class DeviceAssignmentsService {
     if (error) throw error;
     return data;
   }
+
+  async findByDeviceId(device_id: string): Promise<DeviceAssignment[]> {
+    const { data, error } = await supabase
+      .from('device_assignments')
+      .select('*')
+      .eq('device_id', device_id);
+
+    if (error) throw error;
+    return data;
+  }
 }

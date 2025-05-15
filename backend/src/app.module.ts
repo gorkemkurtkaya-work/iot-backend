@@ -9,6 +9,7 @@ import { MqttModule } from './mqtt/mqtt.module';
 import { DeviceAssignmentsModule } from './device_assignments/device-assignments.module';
 import { UserLogsModule } from './user-logs/user-logs.module';
 import { UserLogsInterceptor } from './user-logs/user-logs.interceptor';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UserLogsInterceptor } from './user-logs/user-logs.interceptor';
     MqttModule,
     DeviceAssignmentsModule,
     UserLogsModule,
+    WebsocketModule,
   ],
   controllers: [],
   providers: [
